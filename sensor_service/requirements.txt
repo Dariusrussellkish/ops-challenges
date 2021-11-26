@@ -1,0 +1,14 @@
+aioredis
+certifi
+fastapi
+pydantic
+httptools
+ipython
+pip-chill
+python-dateutil
+python-dotenv
+pyyaml
+uvicorn
+uvloop
+watchgod
+websockets
