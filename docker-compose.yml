@@ -19,6 +19,7 @@ services:
 
   redis:
     image: redislabs/redistimeseries
+    command: ["redis-server", "--loadmodule", "/usr/lib/redis/modules/redistimeseries.so", "DUPLICATE_POLICY", "FIRST"]
     networks:
     - sensor_network
 

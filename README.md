@@ -2,19 +2,6 @@
 
 #### To run locally with Docker:
 ```shell
-docker build -t sensor-service sensor_service
-
-# start the redis container
-docker run --name redis -p 6379:6379 -d redislabs/redistimeseries 
-
-# start the microservice and link to the redis container
-docker run -it --rm -p 8080:8080 -e .env --name sensor-service --link redis -d sensor-service  
-```
-You can then check the FASTApi generated docs (and run basic tests) at `http://localhost:8080/docs`
-
-
-or 
-```shell
 # Using Traefik to proxy and load balance between the two service instances
 docker build -t sensor-service sensor_service
 docker compose up
