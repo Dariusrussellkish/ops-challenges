@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  reverse_proxy:
+    image: traefik:latest
+    command:
+      - "--api.insecure=false"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:8080"
+    ports:
+      - "8080:8080"
+    networks:
+      - sensor_network
+    labels:
+      kompose.service.type: LoadBalancer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  redis:
+    image: redislabs/redistimeseries
+    networks:
+    - sensor_network
+
+  sensor_service:
+    image: sensor-service
+    depends_on:
+    - redis
+    networks:
+    - sensor_network
+    env_file:
+    - .env
+    labels:
+      - "traefik.port=8080"
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`sensor_service.localhost`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.sensor_service.loadbalancer.server.port=8080"
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+        - node.role == manager
+
+networks:
+    sensor_network:
+
+
