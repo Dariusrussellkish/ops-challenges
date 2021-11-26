@@ -1,0 +1,87 @@
+# this would be broken into different files but it's a single one for convenience of running/testing
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-api-svc
+spec:
+  selector:
+    app: sensor-api
+  ports:
+    - protocol: "TCP"
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-api
+  labels:
+    app: sensor-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sensor-api
+  template:
+    metadata:
+      labels:
+        app: sensor-api
+    spec:
+      containers:
+        - name: sensor-api # You'll need to change here to use the image stored on your private ECR
+          image: sensor-service
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: redis_host
+              value: redis-svc.default.svc.cluster.local
+          resources:
+            requests:
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-svc
+  labels:
+    app: redis
+
+spec:
+  ports:
+    - port: 6379
+      name: redis-port
+  clusterIP: None
+  selector:
+    app: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redislabs/redistimeseries
+          command: ["redis-server"]
+          # redis timeseries defaults to blocking duplicate writes, there's nothing in our spec to say
+          # that is acceptable, so we instead will allow duplicate writes and keep the first value put in db
+          args: ["--loadmodule", "/usr/lib/redis/modules/redistimeseries.so", "DUPLICATE_POLICY", "FIRST"]
+          ports:
+            - containerPort: 6379
+              name: redis-port
+          imagePullPolicy: IfNotPresent
+          resources: {}
